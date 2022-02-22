@@ -1,4 +1,4 @@
-#### FaceMask Classification
+# FaceMask Classification
 
 ---
 
