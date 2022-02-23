@@ -20,6 +20,7 @@ def set_seed(seed=0):
 
 def main():
     set_seed(args.seed)
+    ㅇㅇㅇㅇㅇㅇㅇㅇㅇ
 
 
 if __name__ == '__main__':
