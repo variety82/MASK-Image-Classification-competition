@@ -7,6 +7,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import torch
 from torch.utils.data import Dataset, DataLoader
+from conf import *
 
 class MaskDataset(Dataset):
     
