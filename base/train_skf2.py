@@ -23,7 +23,7 @@ from dataset import MaskBaseDataset
 from dataset import get_transforms
 from dataset import getDataloader
 from loss import create_criterion
-
+import copy
 
 def seed_everything(seed):
     torch.manual_seed(seed)
@@ -115,38 +115,6 @@ def train(data_dir, model_dir, args):
     # dataset.set_transform(transform)
     
     transform = get_transforms(mean = dataset.mean, std = dataset.std, img_size = args.resize)
-    dataset.set_transform(transform['train'])
-
-
-
-    def getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers):
-    # 인자로 전달받은 dataset에서 train_idx에 해당하는 Subset 추출
-        train_set = torch.utils.data.Subset(dataset,
-                                            indices=train_idx)
-        # 인자로 전달받은 dataset에서 valid_idx에 해당하는 Subset 추출
-        val_set   = torch.utils.data.Subset(dataset,
-                                            indices=valid_idx)
-        
-        # 추출된 Train Subset으로 DataLoader 생성
-        train_loader = torch.utils.data.DataLoader(
-            train_set,
-            batch_size=batch_size,
-            num_workers=num_workers,
-            drop_last=True,
-            shuffle=True
-        )
-        # 추출된 Valid Subset으로 DataLoader 생성
-        val_loader = torch.utils.data.DataLoader(
-            val_set,
-            batch_size=batch_size,
-            num_workers=num_workers,
-            drop_last=False,
-            shuffle=False
-        )
-        
-        # 생성한 DataLoader 반환
-        return train_loader, val_loader
-
 
     n_splits = 5
     batch_size = args.batch_size
@@ -159,7 +127,10 @@ def train(data_dir, model_dir, args):
         print(train_idx, valid_idx)
 
         # -- data_loader
+        dataset.set_transform(transform['train'])
         train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers)
+        train_loader = copy.deepcopy(train_loader)
+        dataset.set_transform(transform['val'])
 
         # train_set, val_set = dataset.split_dataset()
         # print(transform['train'])
@@ -326,7 +297,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
 
     # Container environment
-    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/images'))
+    parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
     parser.add_argument('--model_dir', type=str, default=os.environ.get('SM_MODEL_DIR', './model'))
 
     args = parser.parse_args()
