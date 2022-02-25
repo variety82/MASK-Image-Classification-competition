@@ -158,3 +158,26 @@ def validate(model, loader, metric_fn, device="cuda", epoch=1):
     age_acc = np.mean(age_acc_list)
     print(f"val epoch {epoch}, gender acc {gender_acc:.2%}, age acc {age_acc:.2%}")
     return (gender_acc + age_acc) / 2
+
+
+mobilenet_v3 = timm.create_model('tf_mobilenetv3_large_100', pretrained=True)
+mobilenet_v3_encoder = nn.Sequential(*list(mobilenet_v3.children())[:-4]).cuda()
+model = AgeGenderModel(mobilenet_v3_encoder, 960, age_classes=3, gender_classes=2).cuda()
+num_epochs = 10
+lr = 3e-4
+
+optimizer = torch.optim.AdamW(model.parameters(), lr)
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=6, verbose=True)
+age_criterion = nn.BCEWithLogitsLoss()
+gender_criterion = nn.CrossEntropyLoss()
+
+for epoch in range(1, num_epochs+1):
+    train(model, train_loader, optimizer, 
+        age_criterion, gender_criterion, metric_fn=accuracy, 
+        device="cuda", epoch=epoch, print_every=30)
+
+val_acc = validate(model, valid_loader, metric_fn=accuracy, device="cuda", epoch=epoch)
+
+scheduler.step(val_acc)
+model = torch.nn.DataParallel(model).cuda()
+torch.save(model.module.state_dict(), "mobilenetv3_age.pth")
