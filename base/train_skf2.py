@@ -93,7 +93,8 @@ def train(data_dir, model_dir, args):
     seed_everything(args.seed)
 
     save_dir = increment_path(os.path.join(model_dir, args.name))
-
+    # labeling = pd.read_csv('./labeling_ver2.csv')
+    # weighted_label = labeling['label'].value_counts().to_dict()
     # -- settings
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
