@@ -7,7 +7,7 @@ python inference.py --model_dir './model/27/EfficientNet9' --model 'Model'
 
 
 1. age label 변경 (59세를 60세 label로)
-2. transform의 대대적인 변화
+2. transform의 대대적인 변화 (get_transforms함수내에서 적용됨)
 3. soft voting 추가
 4. optimizer - AdamW, scheduler - cosineAnneling(?) 
 5. model - tf_efficientnet_b0
