@@ -107,11 +107,12 @@ def get_transforms(need=('train', 'val'), img_size=(512, 384), mean=(0.548, 0.50
         transformations['train'] = Compose([
             CenterCrop(always_apply=False, p=1.0, height=320, width=256),
             Resize(img_size[0], img_size[1]),
-            HorizontalFlip(p=0.5),
-            ShiftScaleRotate(always_apply=False, p=1.0, shift_limit=(-0.06, 0.06), scale_limit=(-0.09999999999999998, 0.10000000000000009), rotate_limit=(-90, 90), interpolation=0, border_mode=0, value=(0, 0, 0), mask_value=None),
-            HueSaturationValue(hue_shift_limit=0.2, sat_shift_limit=0.2, val_shift_limit=0.2, p=0.3),
-            RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=0.3),
-            GaussNoise(p=0),
+            # HorizontalFlip(p=0.5),
+            # Cutout(always_apply=False, p=0.5, num_holes=2, max_h_size=60, max_w_size=60),
+            # ShiftScaleRotate(always_apply=False, p=0.3, shift_limit=(-0.06, 0.06), scale_limit=(-0.1, 0.1), rotate_limit=(-30, 30), interpolation=0, border_mode=0, value=(0, 0, 0), mask_value=None),
+            # HueSaturationValue(hue_shift_limit=0.2, sat_shift_limit=0.2, val_shift_limit=0.2, p=0.3),
+            # RandomBrightnessContrast(brightness_limit=(-0.1, 0.1), contrast_limit=(-0.1, 0.1), p=0.3),
+            # GaussNoise(p=0),
             Normalize(mean=mean, std=std, max_pixel_value=255.0, p=1.0),
             ToTensorV2(p=1.0),
         ], p=1.0)
@@ -230,6 +231,7 @@ class MaskBaseDataset(Dataset):
                 squared.append((image ** 2).mean(axis=(0, 1)))
 
             self.mean = np.mean(sums, axis=0) / 255
+            print(mean)
             self.std = (np.mean(squared, axis=0) - self.mean ** 2) ** 0.5 / 255
 
     def set_transform(self, transform):
@@ -373,13 +375,17 @@ class TestDataset(Dataset):
     def __len__(self):
         return len(self.img_paths)
 
-def getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers):
+def getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers, transform):
     # 인자로 전달받은 dataset에서 train_idx에 해당하는 Subset 추출
     train_set = torch.utils.data.Subset(dataset,
                                         indices=train_idx)
+    train_set.dataset.calc_statistics()
+    train_set.dataset.get_transforms(transform)
     # 인자로 전달받은 dataset에서 valid_idx에 해당하는 Subset 추출
     val_set   = torch.utils.data.Subset(dataset,
                                         indices=valid_idx)
+    val_set.dataset.calc_statistics()
+    val_set.dataset.get_transforms(transform)
     
     # 추출된 Train Subset으로 DataLoader 생성
     train_loader = torch.utils.data.DataLoader(
@@ -400,3 +406,4 @@ def getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers):
     
     # 생성한 DataLoader 반환
     return train_loader, val_loader
+
