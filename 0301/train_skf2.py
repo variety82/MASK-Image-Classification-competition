@@ -129,7 +129,7 @@ def train(data_dir, model_dir, args):
 
         # -- data_loader
         dataset.set_transform(transform['train'])
-        train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers)
+        train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size,args.valid_batch_size, num_workers)
         # train_loader = copy.deepcopy(train_loader)
         # dataset.set_transform(transform['val'])
 
@@ -179,8 +179,17 @@ def train(data_dir, model_dir, args):
         logger = SummaryWriter(log_dir=save_dir+f'/{i}/')
         with open(os.path.join(save_dir+f'/{i}/', 'config.json'), 'w', encoding='utf-8') as f:
             json.dump(vars(args), f, ensure_ascii=False, indent=4)
-        args['log_dir'] = save_dir + f'/{i}' 
-        wandb.init(config=args)
+        wandb.init(name = args.name + f'/{i}/', project = "image-classification", entity="boostcampaitech3")
+        wandb.config = {
+            "name" : args.name,
+            "save_dir" : save_dir + f'/{i}/',
+            "batch_size" : args.batch_size,
+            "criterion"  : args.criterion,
+            "optimizer" : args.optimizer,
+            "dataset" : args.dataset,
+            "epochs" : args.epochs,
+            "model" : args.model,
+        }
         my_table = wandb.Table()
 
         best_val_acc = 0
@@ -233,7 +242,7 @@ def train(data_dir, model_dir, args):
             # val loop
             with torch.no_grad():
                 dataset.set_transform(transform['val'])
-                train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers)
+                train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size,args.valid_batch_size,num_workers)
         
                 print("Calculating validation results...")
                 model.eval()
@@ -255,9 +264,6 @@ def train(data_dir, model_dir, args):
                     val_acc_items.append(acc_item)
                     f1_items.append(f1_item)
                     
-                    my_table.add_column("image", inputs)
-                    my_table.add_column("label", labels)
-                    my_table.add_column("prediction", preds)
 
                     if figure is None:
                         inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
@@ -265,6 +271,7 @@ def train(data_dir, model_dir, args):
                         figure = grid_image(
                             inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
                         )
+                    
                 
                 val_loss = np.sum(val_loss_items) / len(val_loader)
                 val_acc = np.sum(val_acc_items) / len(valid_idx)
@@ -291,10 +298,11 @@ def train(data_dir, model_dir, args):
                 logger.add_scalar("Val/loss", val_loss, epoch)
                 logger.add_scalar("Val/accuracy", val_acc, epoch)
                 logger.add_scalar("Val/f1", f1, epoch)
-                logger.add_figure("results", figure, epoch)
+                # logger.add_figure("results", figure, epoch)
                 wandb.log({
                     "Valid loss" : val_loss,
-                    "Valid acc" : val_acc
+                    "Valid acc" : val_acc,
+                    "Valid f1" : f1
                 })
 
                 print()
