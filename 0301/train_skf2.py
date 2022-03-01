@@ -127,7 +127,8 @@ def train(data_dir, model_dir, args):
 
         # -- data_loader
         dataset.set_transform(transform['train'])
-        train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size,args.valid_batch_size, num_workers)
+        valid_batch_size = 18900//n_splits
+        train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size,valid_batch_size, num_workers)
         # train_loader = copy.deepcopy(train_loader)
         # dataset.set_transform(transform['val'])
 
