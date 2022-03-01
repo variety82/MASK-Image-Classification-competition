@@ -48,7 +48,7 @@ def grid_image(np_images, gts, preds, n=16, shuffle=False):
     choices = random.choices(range(batch_size), k=n) if shuffle else list(range(n))
     figure = plt.figure(figsize=(12, 18 + 2))  # cautions: hardcoded, 이미지 크기에 따라 figsize 를 조정해야 할 수 있습니다. T.T
     plt.subplots_adjust(top=0.8)               # cautions: hardcoded, 이미지 크기에 따라 top 를 조정해야 할 수 있습니다. T.T
-    n_grid = np.ceil(n ** 0.5)
+    n_grid = np.ceil(n ** 0.5).astype('int')
     tasks = ["mask", "gender", "age"]
     for idx, choice in enumerate(choices):
         gt = gts[choice].item()
@@ -93,8 +93,6 @@ def train(data_dir, model_dir, args):
     seed_everything(args.seed)
 
     save_dir = increment_path(os.path.join(model_dir, args.name))
-    # labeling = pd.read_csv('./labeling_ver2.csv')
-    # weighted_label = labeling['label'].value_counts().to_dict()
     # -- settings
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda" if use_cuda else "cpu")
@@ -117,7 +115,7 @@ def train(data_dir, model_dir, args):
     
     transform = get_transforms(mean = dataset.mean, std = dataset.std, img_size = args.resize)
 
-    n_splits = 10
+    n_splits = args.n_splits
     batch_size = args.batch_size
     num_workers = multiprocessing.cpu_count()//2
     skf = StratifiedKFold(n_splits=n_splits)
@@ -190,7 +188,7 @@ def train(data_dir, model_dir, args):
             "epochs" : args.epochs,
             "model" : args.model,
             "augmentation" : transform,
-            "learning scheduler" : scheduler
+            "learning scheduler" :scheduler
         })
         my_table = wandb.Table()
 
@@ -219,6 +217,13 @@ def train(data_dir, model_dir, args):
 
                 loss.backward()
                 optimizer.step()
+                figure_train = None
+                if figure_train is None:
+                        inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
+                        inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                        figure_train = grid_image(
+                            inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                        )
 
                 loss_value += loss.item()
                 matches += (preds == labels).sum().item()
@@ -234,7 +239,8 @@ def train(data_dir, model_dir, args):
                     logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
                     wandb.log({
                         "Train loss" : train_loss,
-                        "Train acc" : train_acc
+                        "Train acc" : train_acc,
+                        "Result_train" : figure_train
                     })
                     loss_value = 0
                     matches = 0
@@ -267,12 +273,12 @@ def train(data_dir, model_dir, args):
                     f1_items.append(f1_item)
                     
 
-                    # if figure is None:
-                    #     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
-                    #     inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
-                    #     figure = grid_image(
-                    #         inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
-                    #     )
+                    if figure is None:
+                        inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
+                        inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                        figure = grid_image(
+                            inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                        )
                     
                 
                 val_loss = np.sum(val_loss_items) / len(val_loader)
@@ -300,11 +306,12 @@ def train(data_dir, model_dir, args):
                 logger.add_scalar("Val/loss", val_loss, epoch)
                 logger.add_scalar("Val/accuracy", val_acc, epoch)
                 logger.add_scalar("Val/f1", f1, epoch)
-                # logger.add_figure("results", figure, epoch)
+                logger.add_figure("results", figure, epoch)
                 wandb.log({
                     "Valid loss" : val_loss,
                     "Valid acc" : val_acc,
-                    "Valid f1" : f1
+                    "Valid f1" : f1,
+                    "Result" : figure
                 })
 
                 print()
@@ -334,6 +341,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr_decay_step', type=int, default=20, help='learning rate scheduler deacy step (default: 20)')
     parser.add_argument('--log_interval', type=int, default=20, help='how many batches to wait before logging training status')
     parser.add_argument('--name', default='exp', help='model save at {SM_MODEL_DIR}/{name}')
+    parser.add_argument('--n_splits', type = int,default = 5)
 
     # Container environment
     parser.add_argument('--data_dir', type=str, default=os.environ.get('SM_CHANNEL_TRAIN', '/opt/ml/input/data/train/images'))
