@@ -4,7 +4,7 @@
 2. parser : n_splits 추가해서 몇개의 K fold를 할지 정해줄 수 있습니다.
 3. getDataLoader에서 valid_batch_size를 인자로 받게 변경
 
-
+4. 이미지를 tensorboard, wandb에 저장할 수 있게 수정
 
 명령어
 
