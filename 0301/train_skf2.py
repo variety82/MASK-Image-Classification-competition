@@ -179,9 +179,9 @@ def train(data_dir, model_dir, args):
         logger = SummaryWriter(log_dir=save_dir+f'/{i}/')
         with open(os.path.join(save_dir+f'/{i}/', 'config.json'), 'w', encoding='utf-8') as f:
             json.dump(vars(args), f, ensure_ascii=False, indent=4)
-        wandb.init(name = args.name + f'/{i}/', project = "image-classification", entity="boostcampaitech3")
-        wandb.config = {
-            "name" : args.name,
+        run = wandb.init(name = args.name + f'/{i}/', project = "image-classification", entity="boostcampaitech3",reinit=True)
+        wandb.config.update({
+            "name" : args.name + f'/{i}/',
             "save_dir" : save_dir + f'/{i}/',
             "batch_size" : args.batch_size,
             "criterion"  : args.criterion,
@@ -189,7 +189,9 @@ def train(data_dir, model_dir, args):
             "dataset" : args.dataset,
             "epochs" : args.epochs,
             "model" : args.model,
-        }
+            "augmentation" : transform,
+            "learning scheduler" : scheduler
+        })
         my_table = wandb.Table()
 
         best_val_acc = 0
@@ -265,12 +267,12 @@ def train(data_dir, model_dir, args):
                     f1_items.append(f1_item)
                     
 
-                    if figure is None:
-                        inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
-                        inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
-                        figure = grid_image(
-                            inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
-                        )
+                    # if figure is None:
+                    #     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
+                    #     inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
+                    #     figure = grid_image(
+                    #         inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
+                    #     )
                     
                 
                 val_loss = np.sum(val_loss_items) / len(val_loader)
@@ -306,6 +308,7 @@ def train(data_dir, model_dir, args):
                 })
 
                 print()
+        run.finish()
 
 
 if __name__ == '__main__':
