@@ -2,7 +2,7 @@
 
 1. wandb 추가
 2. parser : n_splits 추가해서 몇개의 K fold를 할지 정해줄 수 있습니다.
-3. dataset 에서 
+3. getDataLoader에서 valid_batch_size를 인자로 받게 변경
 
 
 
