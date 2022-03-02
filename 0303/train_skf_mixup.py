@@ -253,8 +253,9 @@ def train(data_dir, model_dir, args):
                 model.eval()
                 val_loss_items = []
                 val_acc_items = []
-                f1_items = [] #추가
-                figure = None
+
+                label_sum = []
+                preds_sum = []
                 for val_batch in val_loader:
                     inputs, labels = val_batch
                     inputs = inputs.to(device)
@@ -266,34 +267,30 @@ def train(data_dir, model_dir, args):
                     loss_item = criterion(outs, labels).item()
                     acc_item = (labels == preds).sum().item()
                     
-                    f1_item = f1_score(labels.cpu(), preds.cpu(), average = 'macro') # 추가
-                    
+                    label_sum.extend(labels.cpu())
+                    preds_sum.extend(preds.cpu())
+
                     val_loss_items.append(loss_item)
                     val_acc_items.append(acc_item)
-                    f1_items.append(f1_item)  # 추가
-
-                    # if figure is None:
-                    #     inputs_np = torch.clone(inputs).detach().cpu().permute(0, 2, 3, 1).numpy()
-                    #     inputs_np = dataset_module.denormalize_image(inputs_np, dataset.mean, dataset.std)
-                    #     figure = grid_image(
-                    #         inputs_np, labels, preds, n=16, shuffle=args.dataset != "MaskSplitByProfileDataset"
-                    #     )
-
+                
                 val_loss = np.sum(val_loss_items) / len(val_loader)
                 val_acc = np.sum(val_acc_items) / len(valid_idx)
-                f1 = np.sum(f1_items) / len(val_loader) #추가
+
+                f1 = f1_score(label_sum, preds_sum, average = 'macro') 
                 
-    #             best_val_loss = min(best_val_loss, val_loss)
-    #             if val_acc > best_val_acc:
-    #                 print(f"New best model for val accuracy : {val_acc:4.2%}! saving the best model..")
-    #                 torch.save(model.module.state_dict(), f"{save_dir}/best.pth")
-    #                 best_val_acc = val_acc
                     
                 if f1 > best_f1:   # f1으로 수정
                     print(f"New best model for f1 score : {f1:4.2%}! saving the best model..")
                     torch.save(model.module.state_dict(), f"{save_dir}/{i}/best.pth")
-                    best_f1 = f1    
-                    
+                    best_f1 = f1   
+                    counter = 0
+                else :
+                    counter += 1 
+                
+                if counter > 5 :
+                    print("Early stopping ... ")
+                    break
+                
                 torch.save(model.module.state_dict(), f"{save_dir}/{i}/last.pth")
                 print(
                     f"[Val] acc : {val_acc:4.2%}, loss: {val_loss:4.2} || "
@@ -302,12 +299,11 @@ def train(data_dir, model_dir, args):
                 logger.add_scalar("Val/loss", val_loss, epoch)
                 logger.add_scalar("Val/accuracy", val_acc, epoch)
                 logger.add_scalar("Val/f1", f1, epoch) # 추가
-                # logger.add_figure("results", figure, epoch)
+
                 wandb.log({
                     "Valid loss" : val_loss,
                     "Valid acc" : val_acc,
                     "Valid f1" : f1,
-                    # "Result" : figure
                 })
                 print()
         run.finish()
@@ -318,7 +314,7 @@ if __name__ == '__main__':
 
     # Data and model checkpoints directories
     parser.add_argument('--seed', type=int, default=42, help='random seed (default: 42)')
-    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train (default: 1)')
+    parser.add_argument('--epochs', type=int, default=30, help='number of epochs to train (default: 1)')
     parser.add_argument('--dataset', type=str, default='MaskBaseDataset', help='dataset augmentation type (default: MaskBaseDataset)')
     parser.add_argument('--augmentation', type=str, default='CustomAug1', help='data augmentation type (default: BaseAugmentation)')
     parser.add_argument("--resize", nargs="+", type=list, default=[224, 224], help='resize size for image when training')
@@ -329,7 +325,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.05, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='label_smoothing', help='criterion type (default: cross_entropy)')
-    parser.add_argument('--n_splits', type = int,default = 10)
+    parser.add_argument('--n_splits', type = int,default = 5)
     parser.add_argument('--lr_scheduler', type=str, default='cosine_annealing_warm_restart', help='learning rate scheduler (default: cross_entropy)')
     #lr scheduler 추가
     
