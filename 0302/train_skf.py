@@ -23,6 +23,7 @@ from dataset import MaskBaseDataset
 from dataset import getDataloader
 
 from loss import create_criterion
+import wandb
 
 
 
@@ -120,7 +121,7 @@ def train(data_dir, model_dir, args):
     dataset.set_transform(transform)
 
 
-    n_splits = 20
+    n_splits = args.n_splits
     batch_size = args.batch_size
     num_workers = multiprocessing.cpu_count()//2
     skf = StratifiedKFold(n_splits=n_splits)
@@ -131,7 +132,8 @@ def train(data_dir, model_dir, args):
         print(train_idx, valid_idx)
 
         # -- data_loader
-        train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers)
+        valid_batch_size = len(dataset)//n_splits
+        train_loader, val_loader = getDataloader(dataset, train_idx, valid_idx, batch_size, valid_batch_size, num_workers)
 
 
 
@@ -186,6 +188,20 @@ def train(data_dir, model_dir, args):
         with open(os.path.join(save_dir+f'/{i}/', 'config.json'), 'w', encoding='utf-8') as f:
             json.dump(vars(args), f, ensure_ascii=False, indent=4)
 
+        run = wandb.init(name = args.name + f'/{i}/', project = "image-classification-sub", entity="boostcampaitech3",reinit=True)
+        wandb.config.update({
+            "name" : args.name + f'/{i}/',
+            "save_dir" : save_dir + f'/{i}/',
+            "batch_size" : args.batch_size,
+            "criterion"  : args.criterion,
+            "optimizer" : args.optimizer,
+            "dataset" : args.dataset,
+            "epochs" : args.epochs,
+            "model" : args.model,
+            "augmentation" : transform,
+            "learning scheduler" :scheduler
+        })
+
         best_val_acc = 0
         best_val_loss = np.inf
         best_f1 = 0 # 추가
@@ -220,7 +236,11 @@ def train(data_dir, model_dir, args):
                     )
                     logger.add_scalar("Train/loss", train_loss, epoch * len(train_loader) + idx)
                     logger.add_scalar("Train/accuracy", train_acc, epoch * len(train_loader) + idx)
-
+                    wandb.log({
+                        "Train loss" : train_loss,
+                        "Train acc" : train_acc,
+                        # "Result_train" : figure_train
+                    })
                     loss_value = 0
                     matches = 0
 
@@ -281,8 +301,15 @@ def train(data_dir, model_dir, args):
                 logger.add_scalar("Val/loss", val_loss, epoch)
                 logger.add_scalar("Val/accuracy", val_acc, epoch)
                 logger.add_scalar("Val/f1", f1, epoch) # 추가
-                logger.add_figure("results", figure, epoch)
+                # logger.add_figure("results", figure, epoch)
+                wandb.log({
+                    "Valid loss" : val_loss,
+                    "Valid acc" : val_acc,
+                    "Valid f1" : f1,
+                    # "Result" : figure
+                })
                 print()
+        run.finish()
 
 
 if __name__ == '__main__':
@@ -301,7 +328,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 1e-3)')
     parser.add_argument('--val_ratio', type=float, default=0.05, help='ratio for validaton (default: 0.2)')
     parser.add_argument('--criterion', type=str, default='label_smoothing', help='criterion type (default: cross_entropy)')
-    
+    parser.add_argument('--n_splits', type = int,default = 10)
     parser.add_argument('--lr_scheduler', type=str, default='cosine_annealing_warm_restart', help='learning rate scheduler (default: cross_entropy)')
     #lr scheduler 추가
     

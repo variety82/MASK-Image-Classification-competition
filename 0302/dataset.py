@@ -431,9 +431,12 @@ class TestDataset(Dataset):
     def __len__(self):
         return len(self.img_paths)
 
-    
+def seed_worker(worker_id):
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
                 
-def getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers):
+def getDataloader(dataset, train_idx, valid_idx, batch_size, valid_batch_size, num_workers):
     # 인자로 전달받은 dataset에서 train_idx에 해당하는 Subset 추출
     train_set = torch.utils.data.Subset(dataset,
                                         indices=train_idx)
@@ -444,22 +447,28 @@ def getDataloader(dataset, train_idx, valid_idx, batch_size, num_workers):
                                         indices=valid_idx)
     # val_set.dataset.calc_statistics()
     # val_set.dataset.get_transforms(transform)
-    
+    g = torch.Generator()
+    g.manual_seed(0)
     # 추출된 Train Subset으로 DataLoader 생성
     train_loader = torch.utils.data.DataLoader(
         train_set,
         batch_size=batch_size,
         num_workers=num_workers,
         drop_last=True,
-        shuffle=True
+        shuffle=True,
+        worker_init_fn=seed_worker,
+        generator = g
+
     )
     # 추출된 Valid Subset으로 DataLoader 생성
     val_loader = torch.utils.data.DataLoader(
         val_set,
-        batch_size=batch_size,
+        batch_size=valid_batch_size,
         num_workers=num_workers,
         drop_last=True,
-        shuffle=False
+        shuffle=False,
+        worker_init_fn=seed_worker,
+        generator = g
     )
     
     # 생성한 DataLoader 반환

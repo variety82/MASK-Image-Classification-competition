@@ -37,7 +37,7 @@ def inference(data_dir, model_dir, output_dir, args):
     pred_total = []
     pred_list = []
     weight_list = []
-    for i in range(5):
+    for i in range(10):
         model = load_model(model_dir, num_classes, device, i).to(device)
         model.eval()
 
