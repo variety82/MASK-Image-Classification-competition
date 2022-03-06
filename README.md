@@ -3,7 +3,7 @@
 # 1. 프로젝트 개요
 
 <aside>
-📌 **프로젝트 개요**
+**프로젝트 개요**
 
 
 ***Problem Type.*** 마스크 착용 여부(`Wear`, `Incorrect`, `Not Wear`) , gender(`Male`,  `Female`)나 이(`<30`, `≥30 and < 60`, `≥ 60`)를 기준으로 18개 class 분류
@@ -13,7 +13,7 @@
 </aside>
 
 <aside>
-📌 **개발환경 & 협업툴**
+**개발환경 & 협업툴**
 
 
 - **개발환경**
@@ -34,7 +34,6 @@
 # 2. 팀 구성 및 역할
 
 <aside>
-📌
 
 
 - ***Dataset Part  → 김창현, 손정균***
@@ -43,23 +42,22 @@
   </aside>
 
 <aside>
-📌 **Workspace file & directory**
+**Workspace file & directory**
 
 
-├── input
+ ├── input
  │   └── data
- │ 	├── eval
+ │ 	 ├── eval
  │      └── train
-├── output
+ ├── output
  │   └── output.csv
-├── [README.md](http://readme.md/)
-
-└── code
-     ├── [dataset.py](http://dataset.py/)
-     ├── [loss.py](http://loss.py/)
-     ├── [model.py](http://model.py/)
-     ├── [train.py](http://train.py/)
-    └── [inference.py](http://inference.py/)
+ ├── README.md
+ └── code
+     ├── dataset.py
+     ├── loss.py
+     ├── model.py
+     ├── train.py
+     └── inference.py
 
 ***Train***
 
@@ -95,7 +93,7 @@ Mask, Gender, Age에 대한 전체 Class 분포
 ### 2️⃣ ***Architecture***
 
 <aside>
-📌 ***Efficientnet b4***
+***Efficientnet b4***
 
 
 - optimizer : AdamW
@@ -110,7 +108,7 @@ Mask, Gender, Age에 대한 전체 Class 분포
 </aside>
 
 <aside>
-📌 ***Input Image Size***
+***Input Image Size***
 
 
 빠른 학습을 위해 Efficientnet-b0의 input size인 (224, 224)를 사용
@@ -119,7 +117,7 @@ Mask, Gender, Age에 대한 전체 Class 분포
 </aside>
 
 <aside>
-📌 ***optimizer***
+***optimizer***
 
 
 일반적으로 만능이라 알려진 Adam의 경우 CV에서는 momentum을 포함한 SGD에 비해 일반화가 뒤쳐진다는 연구결과가 있음, 이 문제점을 극복한 AdamW를 사용해 일반화 성능을 높이기 위해 AdamW를 선택
@@ -127,7 +125,7 @@ Mask, Gender, Age에 대한 전체 Class 분포
 </aside>
 
 <aside>
-📌 ***loss***
+***loss***
 
 
 val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못된 일부 데이터를 확인결과 over-confidence문제로 확인하여모델 보정(calibration)을 위해  label_smoothing을 선택
@@ -139,7 +137,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
 → 총 18개의 클래스들 간에 서로 불균형한 데이터 수를 가지고 있으므로 특정 클래스에 편향되어 학 습하게 될 위험성이 존재. 이러한 클래스 불균형 문제를 해소하기 위한 여러가지 기법들을 적용함
 
 <aside>
-📌 ***Over Sampling***
+***Over Sampling***
 
 
 - 가설
@@ -153,7 +151,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
     </aside>
 
 <aside>
-📌 **나이 라벨링 기준 수정**
+**나이 라벨링 기준 수정**
 
 
 - 가설
@@ -167,7 +165,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
 ### 4️⃣***일반성 검증***
 
 <aside>
-📌 ***stratified K fold***
+***stratified K fold***
 
 
 - 상황
@@ -191,7 +189,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
 </aside>
 
 <aside>
-📌 ***Split by Profile***
+***Split by Profile***
 
 
 - 상황
@@ -206,7 +204,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
 ### 5️⃣ ***Augmentation***
 
 <aside>
-📌 ***MixUp / TTA***
+***MixUp / TTA***
 
 
 - 가설
@@ -224,7 +222,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
 # 5. 자체 평가 의견
 
 <aside>
-⚪  **잘한 점들**
+**잘한 점들**
 
 
 - 실험별로 다양한 아이디어로 대조군을 확실히 나눠서 비교가능한 리스트들 작성
@@ -232,14 +230,14 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
   </aside>
 
 <aside>
-⚪ **시도 했으나 잘 되지 않았던 것듯**
+**시도 했으나 잘 되지 않았던 것듯**
 
 
 - val에서의 f1, acc과 실제 제출시 metric의 격차가 심해 검증이 쉽지 않음
   </aside>
 
 <aside>
-⚪ **아쉬웠던 점들**
+**아쉬웠던 점들**
 
 
 - 실험관리를 브랜치별로 나눠서 관리했으면 좋았을 것 같다.
@@ -249,7 +247,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
   </aside>
 
 <aside>
-⚪ 프로젝트를 통해 배운 점 또는 시사점
+프로젝트를 통해 배운 점 또는 시사점
 
 
 - 코드관리(공유)의 중요성
