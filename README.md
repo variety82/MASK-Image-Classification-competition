@@ -173,3 +173,7 @@ val acc, f1와 LB의 점수차이가 많이 나는 현상과 라벨링이 잘못
   - MixUp을 적용한 결과는 예상대로 f1 score가 조금 높아짐.
   - TTA는 시간이 부족하여 여러 시도를 해보지는 못하고 Horizontal Flip을 적용해본 결과 오히려 f1 score가 조금 낮아짐. 큰 의미는 없을 것으로 판단하고 더 이상 TTA는 적용시켜보지 않았는데 private에서는 처음 예상했던 대로 0.005정도 높게 나옴. Horizontal Flip만이 아니라 다른 augmentation들도 적용해보면서 실험을 더 많이 해봤으면 하는 아쉬움이 남음.. 
 
+## 최종결과
+최종 LB Score
+
+Public : 0.7667(8등 / 48 team) **Private : 0.7556** (8등 / 48 team)
